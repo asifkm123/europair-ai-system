@@ -1,104 +1,123 @@
-from flask import Flask, render_template, request, redirect, url_for
 import os
 import json
+from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime
 
 app = Flask(__name__)
 
-# ==========================
-# GOOGLE AUTHENTICATION
-# ==========================
+# ===============================
+# GOOGLE SHEETS CONNECTION
+# ===============================
 
-scope = [
-    "https://spreadsheets.google.com/feeds",
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
-creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-client = gspread.authorize(creds)
+def connect_sheet():
+    try:
+        creds_json = os.environ.get("GOOGLE_CREDENTIALS")
 
-# Open your Google Sheet
-sheet = client.open("EUROPAIR AI DATABASE").sheet1
+        if not creds_json:
+            raise Exception("GOOGLE_CREDENTIALS environment variable not found")
+
+        creds_dict = json.loads(creds_json)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        client = gspread.authorize(creds)
+
+        # 🔥 CHANGE THIS IF YOUR SHEET NAME IS DIFFERENT
+        sheet = client.open("AI DATABASE").sheet1
+
+        return sheet
+
+    except Exception as e:
+        print("Google Sheet Connection Error:", e)
+        return None
 
 
-# ==========================
-# HOME PAGE
-# ==========================
+# ===============================
+# ROUTES
+# ===============================
 
 @app.route("/")
-def index():
+def home():
     return render_template("index.html")
 
-
-# ==========================
-# SUBMIT FORM
-# ==========================
 
 @app.route("/submit", methods=["POST"])
 def submit():
 
-    # Get form data
+    sheet = connect_sheet()
+
+    if not sheet:
+        return "Sheet connection failed. Check credentials.", 500
+
+    # Get form values
     name = request.form.get("name")
     email = request.form.get("email")
-    phone = request.form.get("phone")
-    country = request.form.get("country")
+    number = request.form.get("number")
+    land = request.form.get("land")
     program = request.form.get("program")
     age = request.form.get("age")
-    german_level = request.form.get("german_level")
-    marital_status = request.form.get("marital_status")
-    visa_rejection = request.form.get("visa_rejection")
+    language = request.form.get("language")
+    marital = request.form.get("marital")
+    rejection = request.form.get("rejection")
+    rejection_when = request.form.get("rejection_when")
 
-    # ==========================
-    # PREVENT DUPLICATES
-    # ==========================
+    try:
+        existing_records = sheet.get_all_records()
+    except:
+        existing_records = []
 
-    existing_records = sheet.get_all_records()
+    # ===============================
+    # DUPLICATE EMAIL CHECK
+    # ===============================
 
-    for row in existing_records:
-        if row["Full Name"] == name and row["Phone Number"] == phone:
-            return redirect(url_for("success"))
+    for record in existing_records:
+        if str(record.get("MAIL ID", "")).strip().lower() == str(email).strip().lower():
+            return redirect(url_for("duplicate"))
 
-    # ==========================
-    # ADD TIMESTAMP
-    # ==========================
+    # ===============================
+    # APPEND NEW ROW
+    # ===============================
 
-    timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-
-    # ==========================
-    # APPEND ROW TO SHEET
-    # ==========================
-
-    sheet.append_row([
-        timestamp,
-        name,
-        email,
-        phone,
-        country,
-        program,
-        age,
-        german_level,
-        marital_status,
-        visa_rejection
-    ])
+    try:
+        sheet.append_row([
+            name,
+            email,
+            number,
+            land,
+            program,
+            age,
+            language,
+            marital,
+            rejection,
+            rejection_when,
+            datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+            "NEW LEAD"
+        ])
+    except Exception as e:
+        print("Append Error:", e)
+        return "Error saving data", 500
 
     return redirect(url_for("success"))
 
-
-# ==========================
-# SUCCESS PAGE
-# ==========================
 
 @app.route("/success")
 def success():
     return render_template("success.html")
 
 
-# ==========================
+@app.route("/duplicate")
+def duplicate():
+    return render_template("duplicate.html")
+
+
+# ===============================
 # RUN APP
-# ==========================
+# ===============================
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
