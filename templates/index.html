@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EUROPAIR Registration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h2>EUROPAIR Candidate Registration</h2>
+
+    {% if success %}
+        <div class="success">
+            Registration Successful! Our team will contact you soon.
+        </div>
+    {% endif %}
+
+    <form method="POST" action="/submit">
+        <input name="name" placeholder="Full Name" required>
+        <input name="email" placeholder="Email Address" required>
+        <input name="phone" placeholder="Phone Number" required>
+        <input name="country" placeholder="Country" required>
+        <input name="program" placeholder="Program Applying For" required>
+        <input name="age" placeholder="Age" required>
+        <input name="german" placeholder="German Language Level" required>
+        <input name="marital" placeholder="Marital Status" required>
+        <input name="rejection" placeholder="Visa Rejection (Yes/No)" required>
+        <input name="months" placeholder="If Yes, Months Ago" required>
+
+        <button type="submit">Submit Registration</button>
+    </form>
+</div>
+
+</body>
+</html>
