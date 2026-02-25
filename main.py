@@ -1,65 +1,104 @@
-from flask import Flask, render_template, request
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import datetime
+from flask import Flask, render_template, request, redirect, url_for
 import os
 import json
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 app = Flask(__name__)
 
-# ---------------- GOOGLE AUTH ---------------- #
+# ==========================
+# GOOGLE AUTHENTICATION
+# ==========================
 
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds_json = os.environ.get("GOOGLE_CREDENTIALS")
-
-if not creds_json:
-    raise Exception("GOOGLE_CREDENTIALS environment variable not set.")
-
-creds_dict = json.loads(creds_json)
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
 client = gspread.authorize(creds)
 
-# Replace with your real Sheet ID
-SHEET_ID = "1pGaQ1feaYIRjfBWdlJHufeRtQ1PaL9tZc9ZtBpHmvPc"
-
-sheet = client.open_by_key(SHEET_ID).sheet1
+# Open your Google Sheet
+sheet = client.open("EUROPAIR AI DATABASE").sheet1
 
 
-# ---------------- ROUTES ---------------- #
+# ==========================
+# HOME PAGE
+# ==========================
 
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
 
+# ==========================
+# SUBMIT FORM
+# ==========================
+
 @app.route("/submit", methods=["POST"])
 def submit():
-    try:
-        data = [
-            request.form["name"],
-            request.form["email"],
-            request.form["phone"],
-            request.form["country"],
-            request.form["program"],
-            request.form["age"],
-            request.form["german"],
-            request.form["marital"],
-            request.form["rejection"],
-            request.form["months"],
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        ]
 
-        sheet.append_row(data)
+    # Get form data
+    name = request.form.get("name")
+    email = request.form.get("email")
+    phone = request.form.get("phone")
+    country = request.form.get("country")
+    program = request.form.get("program")
+    age = request.form.get("age")
+    german_level = request.form.get("german_level")
+    marital_status = request.form.get("marital_status")
+    visa_rejection = request.form.get("visa_rejection")
 
-        return render_template("index.html", success=True)
+    # ==========================
+    # PREVENT DUPLICATES
+    # ==========================
 
-    except Exception as e:
-        return f"<h2>Error occurred: {str(e)}</h2>"
+    existing_records = sheet.get_all_records()
 
+    for row in existing_records:
+        if row["Full Name"] == name and row["Phone Number"] == phone:
+            return redirect(url_for("success"))
+
+    # ==========================
+    # ADD TIMESTAMP
+    # ==========================
+
+    timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+    # ==========================
+    # APPEND ROW TO SHEET
+    # ==========================
+
+    sheet.append_row([
+        timestamp,
+        name,
+        email,
+        phone,
+        country,
+        program,
+        age,
+        german_level,
+        marital_status,
+        visa_rejection
+    ])
+
+    return redirect(url_for("success"))
+
+
+# ==========================
+# SUCCESS PAGE
+# ==========================
+
+@app.route("/success")
+def success():
+    return render_template("success.html")
+
+
+# ==========================
+# RUN APP
+# ==========================
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
