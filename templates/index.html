@@ -9,16 +9,16 @@
 <div class="container">
     <h2>EUROPAIR Candidate Registration</h2>
 
-    <form id="multiForm" method="POST" action="/submit">
+    <form method="POST" action="/submit">
 
         <!-- STEP 1 -->
         <div class="step active">
             <h3>Step 1: Personal Information</h3>
             <input name="name" placeholder="Full Name" required>
-            <input name="email" placeholder="Email Address" required>
-            <input name="phone" placeholder="Phone Number" required>
-            <input name="country" placeholder="Country" required>
-            <input name="age" placeholder="Age" required>
+            <input name="email" type="email" placeholder="Email Address" required>
+            <input name="number" placeholder="Phone Number" required>
+            <input name="land" placeholder="Country" required>
+            <input name="age" type="number" placeholder="Age" required>
             <button type="button" onclick="nextStep()">Next</button>
         </div>
 
@@ -26,17 +26,17 @@
         <div class="step">
             <h3>Step 2: Program Details</h3>
             <input name="program" placeholder="Program Applying For" required>
-            <input name="german" placeholder="German Language Level" required>
+            <input name="language" placeholder="German Language Level" required>
             <input name="marital" placeholder="Marital Status" required>
             <input name="rejection" placeholder="Visa Rejection (Yes/No)" required>
-            <input name="months" placeholder="If Yes, Months Ago" required>
+            <input name="rejection_when" placeholder="If Yes, Months Ago or Date" required>
             <button type="button" onclick="prevStep()">Back</button>
             <button type="button" onclick="nextStep()">Next</button>
         </div>
 
         <!-- STEP 3 -->
         <div class="step">
-            <h3>Step 3: Terms & Confirmation</h3>
+            <h3>Step 3: Confirmation</h3>
             <label>
                 <input type="checkbox" required>
                 I accept EUROPAIR Terms & Conditions and Refund Policy.

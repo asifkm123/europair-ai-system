@@ -21,15 +21,13 @@ def connect_sheet():
         creds_json = os.environ.get("GOOGLE_CREDENTIALS")
 
         if not creds_json:
-            raise Exception("GOOGLE_CREDENTIALS environment variable not found")
+            raise Exception("GOOGLE_CREDENTIALS not found")
 
         creds_dict = json.loads(creds_json)
         creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
         client = gspread.authorize(creds)
 
-        # 🔥 CHANGE THIS IF YOUR SHEET NAME IS DIFFERENT
         sheet = client.open("AI DATABASE").sheet1
-
         return sheet
 
     except Exception as e:
@@ -54,7 +52,7 @@ def submit():
     if not sheet:
         return "Sheet connection failed. Check credentials.", 500
 
-    # Get form values
+    # Get form values (MATCHED WITH HTML)
     name = request.form.get("name")
     email = request.form.get("email")
     number = request.form.get("number")
@@ -71,18 +69,12 @@ def submit():
     except:
         existing_records = []
 
-    # ===============================
     # DUPLICATE EMAIL CHECK
-    # ===============================
-
     for record in existing_records:
         if str(record.get("MAIL ID", "")).strip().lower() == str(email).strip().lower():
             return redirect(url_for("duplicate"))
 
-    # ===============================
-    # APPEND NEW ROW
-    # ===============================
-
+    # APPEND NEW ROW (MATCHES YOUR SHEET COLUMN ORDER)
     try:
         sheet.append_row([
             name,
@@ -96,7 +88,7 @@ def submit():
             rejection,
             rejection_when,
             datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-            "NEW LEAD"
+            "NEW"
         ])
     except Exception as e:
         print("Append Error:", e)
@@ -114,10 +106,6 @@ def success():
 def duplicate():
     return render_template("duplicate.html")
 
-
-# ===============================
-# RUN APP
-# ===============================
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
