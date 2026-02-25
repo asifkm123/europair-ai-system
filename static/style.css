@@ -60,3 +60,16 @@ button:hover {
     text-align: center;
     font-weight: bold;
 }
+
+.step {
+    display: none;
+}
+
+.step.active {
+    display: block;
+}
+
+h3 {
+    color: #0047ab;
+    margin-bottom: 15px;
+}
